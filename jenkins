@@ -1,0 +1,38 @@
+---
+- name: install wget
+  yum:
+    name: wget
+    state: present
+
+- name: install openjdk
+  yum:
+    name: java-1.8.0-openjdk
+    state: present
+
+- name: download jenkins.repo
+  get_url:
+    url: http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+    dest: /etc/yum.repos.d/jenkins.repo
+
+- name: import jenkins key
+  rpm_key:
+    state: present
+    key: https://jenkins-ci.org/redhat/jenkins-ci.org.key
+
+- name: install jenkins
+  yum:
+    name: jenkins
+    state: present
+
+
+- name: Jenkins - configure | Turn off Jenkins setup wizard
+  lineinfile: 
+    dest=/etc/sysconfig/jenkins 
+    regexp='^JENKINS_JAVA_OPTIONS=' line='JENKINS_JAVA_OPTIONS="-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"'
+  become: true
+
+- name: enable jenkins
+  service:
+    name: jenkins
+    state: restarted
+    enabled: yes

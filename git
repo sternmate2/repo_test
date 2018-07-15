@@ -1,0 +1,28 @@
+---
+- name: Installing packages
+  gather_facts: False
+  yum:
+    name: git
+    state: present
+
+- name: create and/or change {{ username}}'s  password
+  gather_facts: false
+  user:
+    name: sternmate2
+    password: ss310379
+
+- name: clone git repo
+  gather_facts: False
+  git: 
+    repo: https://github.com/sternmate2/webhooks.git
+    dest: "/home/vagrant/ansible/git/webhooks"
+  become: no
+    
+- name: Set the permissions on git dir
+  file:
+    path: "/home/vagrant/ansible/git/webhooks"
+    state: directory
+    mode: 0755
+    owner: vagrant
+    group: root 
+    recurse: True
