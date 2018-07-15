@@ -1,0 +1,157 @@
+---
+- hosts: all
+  vars:
+  remote_user: vagrant
+  tasks:
+  - name: deploy ssh
+    copy:
+      src: /home/vagrant/.ssh/id_rsa.pub
+      dest: /home/vagrant/.ssh/id_rsa.pub
+
+- hosts: node1
+  become: true
+  tasks:
+    - name: Installs apache web server
+      apt: pkg=apache2 state=installed update_cache=true
+    - name: html provision
+      copy:
+        src: /home/vagrant/ansible/yellow.html
+        dest: /var/www/html/index.html
+    - name: Make my directory tree readable
+      file:
+        path: /var/www/html
+        mode: 0755
+        recurse: yes
+
+      notify:
+        - start apache2
+  handlers:
+    - name: start apache2
+      service: name=apache2 state=started
+
+- hosts: node2
+  become: yes
+  tasks:
+    - name: Installs nginx web server
+      apt: pkg=nginx state=installed update_cache=true
+    - name: nginx config
+      copy:
+        src: /home/vagrant/ansible/inx
+        dest: /etc/nginx/proxy_params
+    - name: nginx config
+      copy:
+        src: /home/vagrant/ansible/node.conf
+        dest: /etc/nginx/sites-enabled/node.conf
+
+    - name:
+      copy:
+        src: /home/vagrant/ansible/blue.conf
+        dest: /etc/nginx/sites-enabled/blue.conf
+
+    - name: Changing mode
+      file: dest=/etc/nginx/sites-enabled/blue.conf mode=0777
+
+    - name:
+      copy:
+        src: /home/vagrant/ansible/yellow.conf
+        dest: /etc/nginx/sites-enabled/yellow.conf
+
+    - name: Changing mode
+      file: dest=/etc/nginx/sites-enabled/yellow.conf mode=0777
+
+
+    - name: Changing mode
+      file: dest=/etc/nginx/sites-enabled/node.conf mode=0777
+
+    - name: Changing woner"
+      file:
+        dest: /etc/nginx/sites-enabled
+        owner: vagrant
+        group: vagrant
+        recurse: yes
+
+      notify:
+        - start nginx
+
+  handlers:
+    - name: start nginx
+      service: name=nginx state=restarted
+
+#- hosts: node3
+#  become: true
+#  vars:
+#    mongodb_version: 3.0.7
+#  tasks:
+#    - name: MongoDB | Import the public key used by the package management system
+#      apt_key: keyserver=keyserver.ubuntu.com id=7F0CEB10
+#    - name: MongoDB | Create a list file
+#      lineinfile: dest=/etc/apt/sources.list.d/mongodb-org-3.0.list line="deb http://repo.mongodb.org/apt/ubuntu precise/mongodb-org/3.0 multiverse" state=present create=yes
+#    - name: MongoDB | Install the packages
+#      apt: name={{ item }}={{ mongodb_version }} state=present update_cache=yes
+#      with_items:
+#        - mongodb-org
+#        - mongodb-org-server
+#        - mongodb-org-shell
+#        - mongodb-org-mongos
+#        - mongodb-org-tools
+#      notify:
+#        - restart mongodb
+#    - name: MongoDB | Listen to all interfaces
+#      lineinfile: "dest=/etc/mongod.conf regexp='^  bindIp: 127.0.0.1' state=absent"
+#      notify:
+#        - restart mongodb
+#  handlers:
+#    - name: restart mongodb
+#      service: name=mongod state=restarted
+
+- hosts: node4
+  become: true
+  tasks:
+    - name: Installs apache web server
+      apt: pkg=apache2 state=installed update_cache=true
+    - name: html provision
+      copy:
+        src: /home/vagrant/ansible/test.html
+        dest: /var/www/html/index.html
+    - name: Make my directory tree readable
+      file:
+        path: /var/www/html
+        mode: 0755
+        recurse: yes
+
+      notify:
+        - start apache2
+  handlers:
+    - name: start apache2
+      service: name=apache2 state=started
+
+- hosts: node5
+  become: true
+  tasks:
+    - name: Installs apache web server
+      apt: pkg=apache2 state=installed update_cache=true
+    - name: html provision
+      copy:
+        src: /home/vagrant/ansible/blue.html
+        dest: /var/www/html/index.html
+    - name: Make my directory tree readable
+      file:
+        path: /var/www/html
+        mode: 0755
+        recurse: yes
+
+      notify:
+        - start apache2
+  handlers:
+    - name: start apache2
+      service: name=apache2 state=started
+
+- name: Install Jenkins and git
+  hosts: master
+  gather_facts: false
+  become: true
+  tasks:
+    - import_role:
+        name: jenkins
+    - import_role:
+        name: git
